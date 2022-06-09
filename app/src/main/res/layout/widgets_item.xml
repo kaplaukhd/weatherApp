@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.constraintlayout.helper.widget.Flow
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="widget_wind, widget_wind_txt, widget_humidity, widget_humidity_txt, widget_thermometer,widget_thermometer_txt, widget_ultraviolet, widget_ultraviolet_txt"
+        app:flow_maxElementsWrap="4"
+        app:flow_verticalGap="8dp"
+        app:flow_horizontalGap="20dp"
+        app:flow_wrapMode="aligned"
+        app:flow_horizontalStyle="packed"
+        app:flow_horizontalAlign="end"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints" />
+
+    <ImageView
+        android:id="@+id/widget_wind"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/wind" />
+
+    <TextView
+        android:id="@+id/widget_wind_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:text="1 км\ч"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="@id/widget_wind"
+        app:layout_constraintStart_toEndOf="@id/widget_wind"
+        app:layout_constraintTop_toTopOf="@id/widget_wind" />
+
+
+    <ImageView
+        android:id="@+id/widget_ultraviolet"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ultraviolet" />
+
+
+    <TextView
+        android:id="@+id/widget_ultraviolet_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:text="0"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="@id/widget_ultraviolet"
+        app:layout_constraintStart_toEndOf="@id/widget_ultraviolet"
+        app:layout_constraintTop_toTopOf="@id/widget_ultraviolet" />
+
+    <ImageView
+        android:id="@+id/widget_thermometer"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/thermometer" />
+
+
+    <TextView
+        android:id="@+id/widget_thermometer_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:text="1000 mBar"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="@id/widget_thermometer"
+        app:layout_constraintStart_toEndOf="@id/widget_thermometer"
+        app:layout_constraintTop_toTopOf="@id/widget_thermometer" />
+
+    <ImageView
+        android:id="@+id/widget_humidity"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/humidity" />
+
+
+    <TextView
+        android:id="@+id/widget_humidity_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:text="100%"
+        android:textColor="@color/black"
+        app:layout_constraintBottom_toBottomOf="@id/widget_humidity"
+        app:layout_constraintStart_toEndOf="@id/widget_humidity"
+        app:layout_constraintTop_toTopOf="@id/widget_humidity" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
