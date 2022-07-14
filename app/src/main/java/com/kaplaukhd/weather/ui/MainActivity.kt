@@ -1,55 +1,57 @@
 package com.kaplaukhd.weather.ui
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import android.widget.ImageView
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.afollestad.recyclical.datasource.dataSourceOf
-import com.afollestad.recyclical.datasource.dataSourceTypedOf
-import com.afollestad.recyclical.datasource.emptyDataSource
 import com.afollestad.recyclical.setup
 import com.afollestad.recyclical.withItem
 import com.kaplaukhd.weather.R
 import com.kaplaukhd.weather.databinding.ActivityMainBinding
 import com.kaplaukhd.weather.model.Daily
 import com.kaplaukhd.weather.model.Hourly
-import com.kaplaukhd.weather.model.HourlyWeather
 import com.kaplaukhd.weather.model.WeatherApiResponse
 import com.kaplaukhd.weather.ui.adapter.DailyWeatherViewHolder
 import com.kaplaukhd.weather.ui.adapter.HourlyWeatherViewHolder
 import com.kaplaukhd.weather.ui.viewmodels.MainViewModel
 import com.kaplaukhd.weather.utils.RequestPermission
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-lateinit var binding: ActivityMainBinding
-lateinit var lm: LinearLayoutManager
 
 class MainActivity : AppCompatActivity() {
+    private var _binding: ActivityMainBinding? = null
+    private val binding
+        get() = requireNotNull(_binding)
     private val model: MainViewModel by lazy {
         ViewModelProvider(this)[MainViewModel::class.java]
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+
+    @SuppressLint("NewApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater).also { setContentView(it.root) }
-        binding.hourlyRecycler.setHasFixedSize(true)
-        binding.dailyRecycler.setHasFixedSize(true)
-        lm = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        if(!RequestPermission().checkSelfPermission(this)){
-            RequestPermission().requestPermission(this, this)
-        }
-
+        _binding = ActivityMainBinding.inflate(layoutInflater).also { setContentView(it.root) }
+        RequestPermission().requestPermission(this, this)
         binding.swipeLayout.setOnRefreshListener {
-            model.geo()
-            binding.swipeLayout.isRefreshing = false
+                model.geo()
+                binding.swipeLayout.isRefreshing = false
         }
         model.geo()
+        binding.swipeLayout.setColorSchemeResources(
+            android.R.color.holo_blue_bright,
+            android.R.color.holo_green_light,
+            android.R.color.holo_orange_light,
+            android.R.color.holo_red_light
+        )
 
         model.currentDate.observe(this) {
             binding.included.dateTxt.text = it
@@ -60,47 +62,50 @@ class MainActivity : AppCompatActivity() {
         }
 
         model.weather.observe(this) {
-            binding.included.tempTxt.text = it.current.temp.roundToInt().toString()
-            setWeatherImg(binding.included.maimImg, it.current.weather[0].main)
-            binding.includedWidgets.widgetHumidityTxt.text =
-                it.current.humidity.toString().plus("%")
-            binding.includedWidgets.widgetThermometerTxt.text =
-                it.current.pressure.toString().plus(" mBar")
-            binding.includedWidgets.widgetUltravioletTxt.text = it.current.uvi.toString()
-            binding.includedWidgets.widgetWindTxt.text =
-                it.current.wind_speed.toString().plus(" Км/ч")
-            binding.included.weatherInfo.text = it.current.weather[0].description
             setRecycler(it)
         }
 
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        model.geo()
     }
 
     private fun setRecycler(weather: WeatherApiResponse) {
+        binding.included.tempTxt.text = weather.current.temp.roundToInt().toString()
+        setWeatherImg(binding.included.maimImg, weather.current.weather[0].description)
+        binding.includedWidgets.widgetHumidityTxt.text =
+            weather.current.humidity.toString().plus("%")
+        binding.includedWidgets.widgetThermometerTxt.text =
+            weather.current.pressure.toString().plus(" mBar")
+        binding.includedWidgets.widgetUltravioletTxt.text = weather.current.uvi.toString()
+        binding.includedWidgets.widgetWindTxt.text =
+            weather.current.wind_speed.toString().plus(" Км/ч")
+        binding.included.weatherInfo.text = weather.current.weather[0].description
+
         val hourlyWeather = arrayListOf<Hourly>()
         val dailyWeather = arrayListOf<Daily>()
-        var x = 0
-
-        while (x <= 24) {
-            hourlyWeather.add(weather.hourly[x])
-            x++
+        for(i in 0..24){
+            hourlyWeather.add(weather.hourly[i])
         }
-        x = 0
-        while (x <= 2) {
-            dailyWeather.add(weather.daily[x])
-            x++
+        for(i in 0..2){
+            dailyWeather.add(weather.daily[i])
         }
 
         val hourlyDataSource = dataSourceOf(hourlyWeather)
         val dailyDataSource = dataSourceOf(dailyWeather)
 
         binding.hourlyRecycler.setup {
-            withLayoutManager(lm)
+            withLayoutManager(LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
+            )
             withDataSource(hourlyDataSource)
-            withItem<Hourly, HourlyWeatherViewHolder>(R.layout.hourly_wether_item) {
+            withItem<Hourly, HourlyWeatherViewHolder>(R.layout.hourly_weather_item) {
                 onBind(::HourlyWeatherViewHolder) { index, item ->
                     temp.text = item.temp.roundToInt().toString().plus("°")
                     date.text = model.getTime(item.dt.toString())
-                    setWeatherImg(img, hourlyWeather[index].weather[0].main)
+                    setWeatherImg(img, hourlyWeather[index].weather[0].description)
                 }
             }
         }
@@ -109,12 +114,12 @@ class MainActivity : AppCompatActivity() {
             withDataSource(dailyDataSource)
             withItem<Daily, DailyWeatherViewHolder>(R.layout.daily_weather_item) {
                 onBind(::DailyWeatherViewHolder) { index, item ->
-                    val MaxTemp = item.temp.max.roundToInt().toString().plus("°/")
-                    val MinTemp = item.temp.min.roundToInt().toString().plus("°")
+                    val maxTemp = item.temp.max.roundToInt().toString().plus("°/")
+                    val minTemp = item.temp.min.roundToInt().toString().plus("°")
                     val aboutDay = item.weather[0].description
-                    temp.text = MaxTemp.plus(MinTemp)
+                    temp.text = maxTemp.plus(minTemp)
                     date.text = model.getDateTime(item.dt.toString()).plus(" $aboutDay")
-                    setWeatherImg(img, dailyWeather[index].weather[0].main)
+                    setWeatherImg(img, dailyWeather[index].weather[0].description)
                 }
             }
         }
@@ -123,14 +128,26 @@ class MainActivity : AppCompatActivity() {
 
     private fun setWeatherImg(img: ImageView, weather: String) {
         when (weather) {
-            "Rain" -> {
+            "дождь" -> {
+                img.setImageResource(R.drawable.heavy_rain)
+            }
+            "переменная облачность" -> {
+                img.setImageResource(R.drawable.partly_cloudy)
+            }
+            "пасмурно" -> {
+                img.setImageResource(R.drawable.cloudy)
+            }
+            "небольшой дождь" -> {
                 img.setImageResource(R.drawable.rainy)
             }
-            "Clouds" -> {
-                img.setImageResource(R.drawable.cloudy)
+            "облачно с прояснениями" -> {
+                img.setImageResource(R.drawable.clouds)
             }
             "Clear" -> {
                 img.setImageResource(R.drawable.sun)
+            }
+            "гроза" -> {
+                img.setImageResource(R.drawable.storm)
             }
         }
     }
@@ -140,7 +157,6 @@ class MainActivity : AppCompatActivity() {
         const val API_KEY = "0613d06f137046da16497e676594d143"
         const val UNIT = "metric"
         const val LANG = "ru"
-        const val TAG = "mainActivity"
     }
 
 }

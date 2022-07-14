@@ -2,6 +2,6 @@
     <string name="app_name">Weather</string>
     <string name="temp">-°C</string>
     <string name="city">-</string>
-    <string name="today_txt">Сегодня</string>
+    <string name="today_txt">Сейчас</string>
 
 </resources>

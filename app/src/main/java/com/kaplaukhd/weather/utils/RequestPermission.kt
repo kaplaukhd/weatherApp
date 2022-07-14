@@ -24,7 +24,7 @@ class RequestPermission {
         }
     }
 
-    fun checkSelfPermission(context: Context): Boolean{
+    fun checkSelfPermission(context: Context): Boolean {
         return ActivityCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION

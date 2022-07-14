@@ -1,36 +1,39 @@
 package com.kaplaukhd.weather.ui.viewmodels
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Application
+import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.os.Build
-import android.util.Log
+import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.LocationServices
-import com.kaplaukhd.weather.data.retrofit.Common
+import com.kaplaukhd.weather.data.WeatherRepository
+import com.kaplaukhd.weather.data.retrofit.RetrofitClient
 import com.kaplaukhd.weather.model.WeatherApiResponse
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.kaplaukhd.weather.utils.RequestPermission
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.*
 
 class MainViewModel(application: Application) :
     AndroidViewModel(application) {
+
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-
-    init {
-        geo()
-    }
-
+    private val retrofit = RetrofitClient.getClient()
+    private val repository = WeatherRepository(retrofit)
     val weather = MutableLiveData<WeatherApiResponse>()
-
     val city = MutableLiveData<String>()
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -70,43 +73,31 @@ class MainViewModel(application: Application) :
     }
 
 
-    private fun response(i: String, j: String) {
-                Common.retrofitServices.getHourlyWeather(i,j).enqueue(object: Callback<WeatherApiResponse>{
-                override fun onResponse(
-                    call: Call<WeatherApiResponse>,
-                    response: Response<WeatherApiResponse>
-                ) {
-                        weather.postValue(response.body())
-                }
-
-                override fun onFailure(call: Call<WeatherApiResponse>, t: Throwable) {
-
-                }
-
-            })
-
-        }
-
-
-
-    @SuppressLint("MissingPermission")
     fun geo() {
-        Log.d(TAG, "start geo")
+        if (ActivityCompat.checkSelfPermission(context,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            RequestPermission().requestPermission(context, Activity())
+            return
+        }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
-                Log.d(TAG, "success")
                 val i = location?.latitude
                 val j = location?.longitude
                 val geocoder = Geocoder(context, Locale.getDefault())
-                city.postValue(geocoder.getFromLocation(i!!, j!!, 1)[0].locality)
-                    response(i.toString(), j.toString())
+                geocoder.getFromLocation(i!!, j!!, 1)[0].getAddressLine(0).apply {
+                    city.postValue(this.replaceAfter(Int.toString(), ""))
+                }
+//                city.postValue(geocoder.getFromLocation(i!!, j!!, 1)[0].locality)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        weather.postValue(repository.getWeather(i.toString(), j.toString()))
+                    }
             }
             .addOnFailureListener {
-                Log.d(TAG, "failure $it")
+                Toast.makeText(context, "Не удалось получить геопозицию", Toast.LENGTH_LONG).show()
             }
     }
 
-    companion object {
-        const val TAG = "viewModel"
-    }
 }
