@@ -9,36 +9,16 @@ import java.net.Proxy
 
 object RetrofitClient {
     private var retrofit: Retrofit? = null
-    private val logging = run {
-        val httpLoggingInterceptor = HttpLoggingInterceptor()
-        httpLoggingInterceptor.apply {
-            httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+    private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
 
-        }
-    }
-
-    private val client: OkHttpClient = OkHttpClient
-        .Builder()
-        .addInterceptor(logging)
-        .build()
-
-
-    fun getClient(url: String): Retrofit {
-        val proxy  = Proxy(Proxy.Type.SOCKS, InetSocketAddress.createUnresolved("5.161.86.206",1080))
-//
-//        val client = OkHttpClient.Builder()
-//            .addInterceptor(logging)
-//            .proxy(proxy)
-//            .build()
-//
+    fun getClient(): RetrofitServices {
         if (retrofit == null) {
             retrofit = Retrofit.Builder()
-                .client(client)
-                .baseUrl(url)
+                .baseUrl(BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
         }
-        return retrofit!!
+        return retrofit!!.create(RetrofitServices::class.java)
     }
 
 

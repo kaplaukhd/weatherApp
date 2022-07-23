@@ -1,15 +1,16 @@
 package com.kaplaukhd.weather.ui
 
-import android.os.Build
+import android.annotation.SuppressLint
+import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ImageView
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.afollestad.recyclical.datasource.dataSourceOf
 import com.afollestad.recyclical.setup
 import com.afollestad.recyclical.withItem
+import com.google.android.gms.location.LocationServices
 import com.kaplaukhd.weather.R
 import com.kaplaukhd.weather.databinding.ActivityMainBinding
 import com.kaplaukhd.weather.model.Daily
@@ -19,10 +20,18 @@ import com.kaplaukhd.weather.ui.adapter.DailyWeatherViewHolder
 import com.kaplaukhd.weather.ui.adapter.HourlyWeatherViewHolder
 import com.kaplaukhd.weather.ui.viewmodels.MainViewModel
 import com.kaplaukhd.weather.utils.RequestPermission
-import com.karumi.dexter.Dexter
+import java.util.*
 import kotlin.math.roundToInt
 
+
+//private val Context.appComponent: AppComponent
+//    get() = when(this){
+//        is App -> appComponent
+//        else -> this.applicationContext.appComponent
+//    }
+
 class MainActivity : AppCompatActivity() {
+    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
     private var _binding: ActivityMainBinding? = null
     private val binding
         get() = requireNotNull(_binding)
@@ -30,24 +39,13 @@ class MainActivity : AppCompatActivity() {
         ViewModelProvider(this)[MainViewModel::class.java]
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater).also { setContentView(it.root) }
         RequestPermission.checkPermission(this)
 
-        binding.swipeLayout.setOnRefreshListener {
-            model.geo()
-            binding.swipeLayout.isRefreshing = false
-        }
-        model.geo()
-
         model.currentDate.observe(this) {
             binding.included.dateTxt.text = it
-        }
-
-        model.city.observe(this) {
-            binding.toolbar.title = it
         }
 
         model.weather.observe(this) {
@@ -92,7 +90,7 @@ class MainActivity : AppCompatActivity() {
             withItem<Hourly, HourlyWeatherViewHolder>(R.layout.hourly_wether_item) {
                 onBind(::HourlyWeatherViewHolder) { index, item ->
                     temp.text = item.temp.roundToInt().toString().plus("°")
-                    date.text = model.getTime(item.dt.toString())
+//                    date.text = model.getTime(item.dt.toString())
                     setWeatherImg(img, hourlyWeather[index].weather[0].main)
                 }
             }
@@ -128,15 +126,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun getLocation() {
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener {
+                val geocoder = Geocoder(applicationContext, Locale.getDefault())
+                binding.toolbar.title =
+                    geocoder.getFromLocation(it.latitude, it.longitude, 1)[0].locality
+                model.getWeather(it.latitude, it.longitude)
+            }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
-    }
-
-    companion object {
-        const val API_KEY = "YOUR_API_KEY"
-        const val UNIT = "metric"
-        const val LANG = "ru"
     }
 }
 
