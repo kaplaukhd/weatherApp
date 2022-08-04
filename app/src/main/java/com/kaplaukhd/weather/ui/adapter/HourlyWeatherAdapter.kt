@@ -1,5 +1,6 @@
 package com.kaplaukhd.weather.ui.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,9 +9,12 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.kaplaukhd.weather.R
 import com.kaplaukhd.weather.model.WeatherApiResponse
+import com.kaplaukhd.weather.utils.WeatherImage
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.roundToInt
 
-class HourlyWeatherAdapter(private val dataset: ArrayList<WeatherApiResponse>) :
+class HourlyWeatherAdapter(private val dataset: WeatherApiResponse) :
     RecyclerView.Adapter<HourlyWeatherAdapter.HourlyViewHolder>() {
 
 
@@ -19,37 +23,16 @@ class HourlyWeatherAdapter(private val dataset: ArrayList<WeatherApiResponse>) :
             .inflate(R.layout.hourly_wether_item, parent, false))
     }
 
+    @SuppressLint("SimpleDateFormat")
     override fun onBindViewHolder(holder: HourlyViewHolder, position: Int) {
-        val item = dataset[position]
-        holder.temp.text = item.hourly[position].temp.roundToInt().toString().plus("°")
-        holder.date.text = item.hourly[position].dt.toString()
-        when (item.hourly[position].weather[0].main) {
-            "дождь" -> {
-                holder.img.setImageResource(R.drawable.heavy_rain)
-            }
-            "переменная облачность" -> {
-                holder.img.setImageResource(R.drawable.partly_cloudy)
-            }
-            "пасмурно" -> {
-                holder.img.setImageResource(R.drawable.cloudy)
-            }
-            "небольшой дождь" -> {
-                holder.img.setImageResource(R.drawable.rainy)
-            }
-            "облачно с прояснениями" -> {
-                holder.img.setImageResource(R.drawable.clouds)
-            }
-            "Clear" -> {
-                holder.img.setImageResource(R.drawable.sun)
-            }
-            "гроза" -> {
-                holder.img.setImageResource(R.drawable.storm)
-            }
-        }
+        holder.temp.text = dataset.hourly[position].temp.roundToInt().toString().plus("°")
+        val date = dataset.hourly[position].dt
+        holder.date.text = SimpleDateFormat("HH:mm").format(Date(date.toLong() * 1000))
+        holder.img.setImageResource(WeatherImage.getImage(dataset.hourly[position].weather[0].description))
     }
 
 
-    override fun getItemCount() = dataset.size
+    override fun getItemCount() = 24
 
     class HourlyViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val temp: TextView = view.findViewById(R.id.hourly_temp_txt)

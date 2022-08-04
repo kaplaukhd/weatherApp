@@ -2,12 +2,16 @@ package com.kaplaukhd.weather.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.drawable.GradientDrawable
 import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.OrientationHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.LocationServices
 import com.kaplaukhd.weather.App
 import com.kaplaukhd.weather.data.AppComponent
@@ -19,6 +23,7 @@ import com.kaplaukhd.weather.ui.adapter.HourlyWeatherAdapter
 import com.kaplaukhd.weather.ui.viewmodels.MainViewModel
 import com.kaplaukhd.weather.ui.viewmodels.ViewModelFactory
 import com.kaplaukhd.weather.utils.RequestPermission
+import com.kaplaukhd.weather.utils.WeatherImage
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
@@ -39,7 +44,6 @@ class MainActivity : AppCompatActivity() {
     private var _binding: ActivityMainBinding? = null
     private val binding
         get() = requireNotNull(_binding)
-    private val dataset = arrayListOf<WeatherApiResponse>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater).also {
@@ -48,7 +52,7 @@ class MainActivity : AppCompatActivity() {
         RequestPermission.checkPermission(this)
         init()
         with(binding) {
-            hourlyRecycler.layoutManager = LinearLayoutManager(this@MainActivity)
+            hourlyRecycler.layoutManager = LinearLayoutManager(this@MainActivity, RecyclerView.HORIZONTAL, false)
             dailyRecycler.layoutManager = LinearLayoutManager(this@MainActivity)
         }
         appComponent.inject(this)
@@ -56,14 +60,13 @@ class MainActivity : AppCompatActivity() {
         model.weather.observe(this) {
             when (it) {
                 is Result.Success -> {
-                    dataset.add(it.data!!)
                     with(binding) {
                         hourlyRecycler.adapter =
-                            HourlyWeatherAdapter(dataset)
+                            HourlyWeatherAdapter(it.data!!)
                         dailyRecycler.adapter =
-                            DailyWeatherAdapter(dataset)
+                            DailyWeatherAdapter(it.data)
                     }
-                    setWeather(it.data)
+                    setWeather(it.data!!)
                 }
                 else -> {
                     Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
@@ -76,6 +79,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setWeather(it: WeatherApiResponse) {
         with(binding) {
+            included.maimImg.setImageResource(WeatherImage.getImage(it.current.weather[0].description))
             included.tempTxt.text = it.current.temp.roundToInt().toString()
             included.weatherInfo.text = it.current.weather[0].description
             with(includedWidgets) {
