@@ -16,7 +16,7 @@ data class Current (
     @SerializedName("feels_like") val feels_like : Double,
     @SerializedName("pressure") val pressure : Int,
     @SerializedName("humidity") val humidity : Int,
-    @SerializedName("wind_speed") val wind_speed : Int,
+    @SerializedName("wind_speed") val wind_speed : Double,
     @SerializedName("weather") val weather : List<CurrentWeather>,
 )
 data class CurrentWeather(

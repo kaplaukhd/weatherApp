@@ -28,8 +28,3 @@ object RequestPermission {
     }
 }
 
-object Utils{
-        const val API_KEY = "YOUR_API_KEY"
-        const val UNIT = "metric"
-        const val LANG = "ru"
-}

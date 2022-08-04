@@ -1,13 +1,13 @@
 package com.kaplaukhd.weather.data.repository
 
 import com.kaplaukhd.weather.data.retrofit.RetrofitServices
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import retrofit2.await
+import com.kaplaukhd.weather.model.Result
+import com.kaplaukhd.weather.model.WeatherApiResponse
 import javax.inject.Inject
 
-class WeatherRepository @Inject constructor(private val retrofitServices: RetrofitServices) {
-    suspend fun getWeather(i: String, j: String) = withContext(Dispatchers.IO) {
-        retrofitServices.getHourlyWeather(i, j)
-    }.await()
+class WeatherRepository @Inject constructor(private val retrofitServices: RetrofitServices) :
+    BaseRepository() {
+    suspend fun getWeather(i: String, j: String): Result<WeatherApiResponse> = apiCall {
+        retrofitServices.getWeather(i, j)
+    }
 }
